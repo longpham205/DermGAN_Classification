@@ -287,8 +287,8 @@ Includes:
 ### 1. Clone repository
 
 ```
-git clone 
-cd DermGAN
+git clone https://github.com/longpham205/DermGAN_Classification.git
+cd DermGAN_DermGAN_Classification
 ```
 
 ### 2. Create virtual environment
