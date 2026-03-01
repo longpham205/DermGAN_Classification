@@ -1,30 +1,34 @@
-# Analysis Module Report
+# Analysis Module Documentation
 
 ---
 
-# 1. Tổng quan hệ thống phân tích (Analysis Module)
+# 1. Overview of the Analysis Module
 
-Module `analysis/` được thiết kế như một **research-grade evaluation framework** nhằm:
+The `analysis/` module is designed as a **research-grade evaluation framework** for systematic post-training model assessment.
 
-- Đánh giá hiệu năng tổng thể của mô hình  
-- Phân tích hiệu năng theo từng lớp bệnh  
-- So sánh nhiều experiment  
-- Kiểm định ý nghĩa thống kê  
-- Phân tích không gian biểu diễn (representation space)  
-- (Tùy chọn) Phân tích lâm sàng (clinical interpretability)  
+Its objectives include:
 
-Mục tiêu không chỉ dừng ở việc báo cáo accuracy, mà xây dựng một pipeline phân tích toàn diện phục vụ:
+- Evaluating overall model performance  
+- Analyzing per-class performance  
+- Comparing multiple experiments  
+- Performing statistical significance testing  
+- Analyzing representation space (feature embeddings)  
+- (Optional) Conducting clinical-level interpretability analysis  
 
-- So sánh baseline vs augmentation  
-- Đánh giá GAN augmentation  
-- Kiểm định statistical significance  
-- Chuẩn bị kết quả cho publication  
+The goal extends beyond reporting accuracy. This module establishes a **comprehensive evaluation pipeline** to support:
+
+- Baseline vs. augmentation comparison  
+- GAN augmentation assessment  
+- Statistical validation of improvements  
+- Preparation of publication-ready results  
+
+This design ensures that the system evaluation meets standards expected in medical AI research.
 
 ---
 
-# 2. Kiến trúc tổng thể của Analysis Pipeline
+# 2. Overall Architecture of the Analysis Pipeline
 
-## Cấu trúc thư mục
+## Directory Structure
 
 ```
 src/
@@ -36,7 +40,7 @@ src/
 └── statistics
 ```
 
-## Pipeline tổng quát
+## General Pipeline Flow
 
 ```
 Experiment Outputs
@@ -54,381 +58,390 @@ Statistical Testing
 ```
 
 
+The pipeline is orchestrated through `run_analysis.py`, which serves as the main entry point.
+
 ---
 
-# 3. Core Layer – Nền tảng của hệ thống
+# 3. Core Layer – Foundation of the System
 
-Thư mục: `analysis/core/`
+Directory: `analysis/core/`
 
 ## 3.1 load_results.py
 
-### Mục đích
+### Purpose
 
-- Load toàn bộ thông tin của một experiment  
-- Chuẩn hóa dữ liệu đầu vào cho các module phía sau  
+- Load all relevant experiment outputs
+- Standardize input data format for downstream modules
 
-### Output chính: `ExperimentResult`
+### Main Output: `ExperimentResult`
 
-Chứa:
+Contains:
 
-- `exp_name`  
-- `metrics`  
-- `classification_report`  
-- `confusion_matrix`  
-- `predictions_path`  
-- `exp_dir`  
+- `exp_name`
+- `metrics`
+- `classification_report`
+- `confusion_matrix`
+- `predictions_path`
+- `exp_dir`
 
-### Vai trò
+### Role
 
-Tách biệt hoàn toàn:
+This module separates:
 
-- File system  
-- Logic phân tích  
+- File system operations  
+- Analysis logic  
 
-Đây là lớp abstraction quan trọng giúp toàn bộ pipeline sạch và mở rộng được.
+It provides a critical abstraction layer that keeps the pipeline clean, modular, and extensible.
 
 ---
 
 ## 3.2 compare_experiments.py
 
-### Mục đích
+### Purpose
 
-So sánh nhiều experiment trên cùng bộ metric.
+Compare multiple experiments using consistent metrics.
 
-### Tính năng
+### Features
 
-- Tổng hợp accuracy  
+Aggregates:
+
+- Accuracy  
 - Macro F1  
 - Weighted F1  
 - Macro AUC  
-- Xuất bảng CSV so sánh  
 
-### Ý nghĩa
+Exports:
 
-Giúp:
+- Comparison CSV table
 
-- So sánh baseline vs augmentation  
-- Đánh giá tác động của GAN  
-- Tạo bảng kết quả cho paper  
+### Importance
+
+Enables:
+
+- Baseline vs. augmentation comparison  
+- Quantifying GAN impact  
+- Generating publication-ready result tables  
 
 ---
 
 ## 3.3 metrics_utils.py
 
-### Vai trò
+### Role
 
-- Các utility tính toán metric  
-- Chuẩn hóa cách tính để đảm bảo consistency  
+- Utility functions for metric computation  
+- Ensures consistent metric definitions across modules  
+
+This guarantees reproducibility and metric consistency.
 
 ---
 
 # 4. Performance Analysis Layer
 
-Thư mục: `analysis/performance/`
+Directory: `analysis/performance/`
 
-Đây là lớp đánh giá mô hình ở mức prediction.
+This layer evaluates model behavior at the prediction level.
 
 ---
 
 ## 4.1 overall_analysis.py
 
-### Phân tích
+### Evaluates:
 
 - Accuracy  
 - Macro F1  
 - AUC  
 - Balanced accuracy  
 
-### Ý nghĩa
+### Purpose
 
-Đánh giá tổng quát mô hình trên toàn bộ dataset.
+Provides a global assessment of model performance across the dataset.
 
 ---
 
 ## 4.2 per_class_analysis.py
 
-### Phân tích
+### Evaluates:
 
-- Precision theo từng lớp  
-- Recall theo từng lớp  
-- F1-score theo từng lớp  
+- Precision per class  
+- Recall per class  
+- F1-score per class  
 
-### Ý nghĩa
+### Importance
 
-Rất quan trọng với HAM10000 vì:
+Critical for HAM10000 due to:
 
-- Dataset mất cân bằng  
-- Melanoma là minority class  
+- Severe class imbalance  
+- Melanoma being a minority class  
 
-Giúp đánh giá:
+Helps determine:
 
-- Model có bỏ sót melanoma không?  
-- Có bias với lớp phổ biến không?  
+- Whether melanoma is under-detected  
+- Whether the model is biased toward majority classes  
 
 ---
 
 ## 4.3 confusion_analysis.py
 
-### Phân tích
+### Evaluates:
 
-- Ma trận nhầm lẫn  
-- Pattern nhầm lẫn giữa các lớp  
+- Confusion matrix  
+- Misclassification patterns  
 
-### Ý nghĩa
+### Clinical Importance
 
-Ví dụ:
+For example:
 
-- Model nhầm melanoma thành nevus?  
-- Hay nhầm BCC thành AKIEC?  
+- Is melanoma confused with nevus?  
+- Is BCC confused with AKIEC?  
 
-Cực kỳ quan trọng trong nghiên cứu y tế.
+Such confusion patterns are highly relevant in medical applications.
 
 ---
 
 ## 4.4 calibration_analysis.py
 
-### Phân tích
+### Evaluates:
 
-- Calibration curve  
+- Calibration curves  
 - Expected Calibration Error (ECE)  
 
-### Ý nghĩa
+### Importance in Medical AI
 
-Trong y khoa, xác suất dự đoán phải đáng tin cậy.
+Probability estimates must be trustworthy.
 
-Model có confidence cao nhưng sai → nguy hiểm.
+A model that is highly confident yet wrong poses clinical risks.
+
+Calibration analysis ensures probabilistic reliability.
 
 ---
 
-# 5. Statistics Layer – Kiểm định ý nghĩa thống kê
+# 5. Statistics Layer – Statistical Significance Testing
 
-Thư mục: `analysis/statistics/`
+Directory: `analysis/statistics/`
 
-Đây là phần nâng cấp pipeline lên mức publication.
+This layer elevates the pipeline to publication standards.
 
 ---
 
 ## 5.1 bootstrap_ci.py
 
-### Mục đích
+### Purpose
 
-Tính confidence interval cho:
+Compute confidence intervals for:
 
 - Accuracy  
 - Macro F1  
 - Macro AUC  
 
-### Phương pháp
+### Method
 
 Bootstrap resampling:
 
-- Lấy mẫu có hoàn lại  
-- Lặp N lần (mặc định 1000)  
-- Tính phân vị 2.5% – 97.5%  
+- Sampling with replacement  
+- N iterations (default: 1000)  
+- Percentile-based 95% confidence interval (2.5% – 97.5%)
 
-### Ý nghĩa
+### Importance
 
-Không chỉ báo cáo:
+Instead of reporting:
 
 ```
 Accuracy = 0.87
 ```
 
-
-mà báo cáo:
+We report:
 
 ```
 Accuracy = 0.87 (95% CI: 0.84 – 0.90)
 ```
 
-
-→ Chuẩn publication.
+This aligns with publication standards.
 
 ---
 
 ## 5.2 mcnemar_test.py
 
-### Mục đích
+### Purpose
 
-So sánh 2 mô hình trên cùng test set.
+Compare two models evaluated on the same test set.
 
-### Phù hợp khi
+### Suitable for:
 
-- So sánh baseline vs augmented  
-- So sánh ResNet vs EfficientNet  
+- Baseline vs. augmented models  
+- ResNet vs. EfficientNet comparison  
 
-### Kiểm định
+### Hypothesis
 
-Null hypothesis: 2 model có performance tương đương  
+Null hypothesis:  
+Both models have equivalent performance.
 
-Nếu p-value < 0.05 → cải thiện có ý nghĩa thống kê.
+If `p-value < 0.05`, the improvement is statistically significant.
 
 ---
 
 ## 5.3 significance_report.py
 
-### Tổng hợp
+### Aggregates:
 
 - McNemar test  
-- Bootstrap CI  
-- So sánh metric  
-- Xuất báo cáo thống kê  
+- Bootstrap confidence intervals  
+- Metric comparisons  
 
-### Vai trò
+### Output
 
-Đây là module chính biến pipeline thành:
+- Statistical summary reports  
+- JSON + text report  
 
-**Research-grade evaluation framework.**
+### Role
+
+This module transforms the evaluation into a **research-grade statistical framework**.
 
 ---
 
 # 6. Representation Analysis Layer
 
-Thư mục: `analysis/representation/`
+Directory: `analysis/representation/`
 
 ---
 
 ## 6.1 embedding_analysis.py
 
-### Phân tích
+### Analyzes:
 
-- Khoảng cách intra-class  
-- Khoảng cách inter-class  
+- Intra-class distance  
+- Inter-class distance  
 - Compactness  
 - Separability  
 
-### Ý nghĩa
+### Purpose
 
-Kiểm tra:
+Evaluate whether GAN augmentation:
 
-GAN augmentation có giúp:
+- Improves class separation  
+- Produces clearer feature clusters  
 
-- Tăng separation giữa lớp?  
-- Làm feature space rõ ràng hơn?  
-
-Đây là phân tích ở mức representation, không chỉ prediction.
+This operates at the representation level, beyond raw predictions.
 
 ---
 
 ## 6.2 feature_space_analysis.py
 
-Phân tích sâu hơn về:
+### Analyzes:
 
-- Cấu trúc không gian đặc trưng  
+- Structure of feature space  
 - Clustering behavior  
-- Overlap giữa các lớp  
+- Class overlap  
+
+This provides deeper insight into learned representations.
 
 ---
 
 # 7. Clinical Layer
 
-Thư mục: `analysis/clinical/`
+Directory: `analysis/clinical/`
 
 ---
 
 ## 7.1 abcd_analysis.py
 
-### Mục tiêu
+### Purpose
 
-Phân tích sai số theo quy tắc ABCD:
+Analyze model errors according to the ABCD rule:
 
 - Asymmetry  
 - Border  
 - Color  
 - Diameter  
 
-### Lưu ý quan trọng
+### Important Note
 
-Dataset HAM10000 không có ABCD annotation.
+The HAM10000 dataset does **not** include ABCD annotations.
 
-Vì vậy phần này:
+Therefore:
 
-- Có trong pipeline  
-- Nhưng không dùng được với HAM10000 mặc định  
+- This module exists in the pipeline  
+- It is not directly applicable to default HAM10000  
 
-Nếu muốn dùng cần:
+To use it, one must:
 
-- Dataset có ABCD features  
-- Hoặc tự trích xuất từ segmentation  
-
----
-
-# 8. Tóm tắt nhiệm vụ từng nhóm file
-
-| Layer           | Mục tiêu                              |
-|---------------|----------------------------------------|
-| core          | Load và chuẩn hóa experiment           |
-| performance   | Đánh giá prediction                   |
-| statistics    | Kiểm định ý nghĩa                     |
-| representation| Phân tích feature space               |
-| clinical      | Phân tích theo đặc trưng lâm sàng     |
+- Provide a dataset with ABCD annotations  
+- Or extract ABCD features via segmentation  
 
 ---
 
-# 9. Kết quả mà hệ thống tạo ra
+# 8. Summary of Module Responsibilities
 
-Pipeline tạo ra:
+| Layer | Objective |
+|--------|-----------|
+| core | Load and standardize experiment data |
+| performance | Evaluate prediction-level behavior |
+| statistics | Test statistical significance |
+| representation | Analyze feature space |
+| clinical | Analyze clinical characteristics |
+
+---
+
+# 9. Outputs Generated by the System
+
+The pipeline produces:
 
 - `metrics.json`  
 - `experiment_comparison.csv`  
 - `confusion_matrix.json`  
-- Bootstrap CI report  
-- McNemar test result  
+- Bootstrap CI reports  
+- McNemar test results  
 - `embedding_analysis.json`  
-- (Optional) clinical report  
+- (Optional) clinical reports  
 
-Đủ để:
+These outputs are sufficient to:
 
-- Viết bảng kết quả cho paper  
-- Viết phần statistical validation  
-- Chứng minh GAN augmentation có ý nghĩa  
-
----
-
-# 10. Ý nghĩa khoa học của hệ thống
-
-Hệ thống này cho phép:
-
-- So sánh nhiều experiment một cách hệ thống  
-- Kiểm định statistical significance  
-- Phân tích sâu feature space  
-- Đảm bảo reproducibility  
-- Chuẩn bị output sẵn sàng cho publication  
-
-Nó vượt xa việc chỉ in accuracy.
+- Construct publication tables  
+- Write statistical validation sections  
+- Demonstrate GAN augmentation effectiveness  
 
 ---
 
-# 11. Kết luận phần Analysis
+# 10. Scientific Significance of the System
 
-Module Analysis trong hệ thống DermGAN:
+This framework enables:
 
-- Được thiết kế theo hướng modular  
-- Tách biệt rõ layer  
-- Không phụ thuộc lẫn nhau  
-- Mở rộng được  
-- Đủ tiêu chuẩn cho nghiên cứu khoa học  
+- Systematic multi-experiment comparison  
+- Statistical validation of improvements  
+- Deep feature space analysis  
+- Reproducibility  
+- Publication-ready output generation  
 
-Với HAM10000, phần quan trọng nhất là:
+It goes far beyond simply printing accuracy.
 
-- Overall performance  
+---
+
+# 11. Conclusion of the Analysis Module
+
+The Analysis module in the DermGAN system:
+
+- Is modular and well-structured  
+- Clearly separates functional layers  
+- Minimizes inter-module dependency  
+- Is extensible  
+- Meets scientific research standards  
+
+For HAM10000, the most critical components are:
+
+- Overall performance analysis  
 - Per-class analysis  
 - Confusion matrix  
-- Bootstrap CI  
-- McNemar significance test  
+- Bootstrap confidence intervals  
+- McNemar significance testing  
 - Representation analysis  
 
-## 12. Kết luận chung
+The ABCD module is not directly applicable due to missing dataset annotations.
 
-Phần Analysis không chỉ nhằm báo cáo kết quả, mà:
+---
 
-- Là công cụ kiểm tra độ tin cậy và tính lâm sàng của hệ thống GAN-based classification.
+This Analysis framework transforms the system from:
 
-- Nó giúp chuyển hệ thống từ:
+> "A model that reports accuracy"
 
-"Model có accuracy cao"
+into:
 
-thành:
-
-"Model được kiểm chứng, hiểu rõ hành vi, và có thể đánh giá mức độ tin cậy trong bối cảnh y khoa."
-
+> "A rigorously evaluated, statistically validated, research-grade medical AI system."
