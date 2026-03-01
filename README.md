@@ -151,6 +151,15 @@ Synthetic metadata:
 ```
 dataset/synthetic/synthetic_metadata.csv
 ```
+### Download Pre-generated Synthetic Images (Optional)
+
+Pre-generated synthetic images are available at:
+
+Google Drive: https://your-link-here
+
+After downloading, place them into:
+
+dataset/synthetic/
 
 ---
 
@@ -168,6 +177,16 @@ checkpoints/
 ```
 
 You may optionally upload pretrained checkpoints separately (e.g., Google Drive) if sharing publicly.
+
+### Download Pretrained Checkpoints (Optional)
+
+Pretrained classifier and GAN checkpoints:
+
+Google Drive: https://your-checkpoint-link
+
+Extract and place into:
+
+checkpoints/
 
 ---
 
@@ -188,6 +207,16 @@ Key files:
 - experiment_comparison.csv
 - significance_report.json
 - gan_fid_report.csv
+
+### Download Sample Results
+
+Sample experiment outputs:
+
+Google Drive: https://your-results-link
+
+Extract to:
+
+results/
 
 ---
 
