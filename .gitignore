@@ -35,7 +35,7 @@ ENV/
 data/
 dataset/processed/
 dataset/synthetic/
-dataset/splits/*.csv
+dataset/splits/
 
 # ===============================
 # RESULTS & LOGS
