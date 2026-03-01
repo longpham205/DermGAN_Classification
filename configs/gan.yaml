@@ -1,0 +1,106 @@
+# configs/gan.yaml
+# =========================================
+# GAN CONFIGURATION
+# Auto-Selective Single-Class CWGAN-GP
+#
+# Core idea:
+#   - GAN is NOT used to replace real data
+#   - GAN is trained ONLY for minority classes
+#   - Generation target is adaptive and data-driven
+# =========================================
+
+gan:
+  model: cwgan_gp
+  experiment_name: exp_02_gan_aug
+
+  # Implicit conditioning via single-class training
+  # (reviewer-safe alternative to multi-class conditional GANs)
+  conditional: single_class
+
+  # -----------------------------------------
+  # DATASET (SINGLE CLASS ONLY)
+  # -----------------------------------------
+  dataset:
+    name: HAM10000
+    mode: single_class
+    class_name: null          # set dynamically at runtime
+
+  # -----------------------------------------
+  # CHECKPOINTS
+  # -----------------------------------------
+  checkpoints:
+    root: checkpoints
+    ckpt_path: generator.pt
+
+  # -----------------------------------------
+  # RESULTS
+  # -----------------------------------------
+  results:
+    root: results
+    
+    train: train
+    matrix_csv: train_metrics.csv
+    matrix_json: train_metrics.json
+
+    evaluate: evaluate 
+    fid_csv: gan_fid_report.csv
+    fid_json: gan_fid_report.json
+
+  # -----------------------------------------
+  # IMAGE SETTINGS
+  # -----------------------------------------
+  image:
+    size: 128
+    channels: 3
+    normalize: true
+
+  # -----------------------------------------
+  # LATENT SPACE
+  # -----------------------------------------
+  latent:
+    dim: 100
+
+  # -----------------------------------------
+  # TRAINING (WGAN-GP)
+  # -----------------------------------------
+  training:
+    batch_size: 64
+    epochs: 50
+    lr: 0.0002
+    beta1: 0.5
+    beta2: 0.999
+    seed: 42
+
+    n_critic: 2
+    lambda_gp: 5.0
+
+    num_workers: 4
+    pin_memory: true
+
+  # -----------------------------------------
+  # AUTO-SELECTIVE GENERATION (CORE CONTRIBUTION)
+  # -----------------------------------------
+  generation:
+    strategy: auto_selective
+
+    # Minority class definition:
+    #   n_class < threshold_ratio * n_max
+    threshold_ratio: 0.4
+
+    # Target size:
+    #   target = min(median_count, n_real * max_growth_factor)
+    max_growth_factor: 4
+
+    # Absolute safety cap (never binding in normal cases)
+    hard_cap: 5000
+
+    save_format: jpg
+    output_dir: dataset/synthetic
+    metadata: synthetic_metadata.csv
+
+  # -----------------------------------------
+  # LOGGING & VISUALIZATION
+  # -----------------------------------------
+  logging:
+    save_every: 10
+    sample_grid: true

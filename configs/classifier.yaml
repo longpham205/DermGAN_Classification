@@ -1,0 +1,105 @@
+#configs/classifier.yaml
+
+# =========================
+# MODEL
+# =========================
+model:
+  backbone: resnet50
+  pretrained: true
+  freeze_backbone: true
+  num_classes: 7
+
+# =========================
+# TRAINING
+# =========================
+training:
+  input_size: 224
+  batch_size: 32
+  epochs: 20
+  lr: 0.0001
+
+  optimizer:
+    name: adam
+    weight_decay: 0.00001
+
+  scheduler:
+    name: cosine
+    warmup_epochs: 0
+
+  loss:
+    name: weighted_cross_entropy
+    class_weight_source: dataset
+
+  early_stopping:
+    enabled: true
+    monitor: val_macro_auc
+    patience: 5
+    mode: max
+
+# =========================
+# DATA AUGMENTATION (CLASSIFIER-LEVEL)
+# =========================
+augmentation:
+  enabled: true              # classifier supports augmentation
+  mode: class_aware          # none | uniform | class_aware
+
+  # ---------------------------------
+  # CLASS-AWARE AUGMENT FACTOR
+  # ---------------------------------
+  # Number of augmented samples per real image
+  # Applied ONLY when experiment.yaml enables basic augmentation
+  class_aug_factor:
+    nv: 1
+    mel: 1
+    bkl: 1
+    bcc: 2
+    akiec: 3
+    vasc: 4
+    df: 4
+
+  # ---------------------------------
+  # TRANSFORM CONFIG
+  # ---------------------------------
+  train:
+    weak:
+      horizontal_flip: true
+      vertical_flip: false
+      rotation: 10
+      color_jitter: false
+      random_crop: false
+
+    strong:
+      horizontal_flip: true
+      vertical_flip: true
+      rotation: 25
+      color_jitter: true
+      random_crop: false
+
+  val:
+    resize_only: true
+
+# =========================
+# METRICS
+# =========================
+metrics:
+  primary: macro_auc
+  secondary:
+    - accuracy
+    - macro_recall
+    - macro_f1
+
+# ========================
+# RESEARCH LEVEL
+# ========================
+reproducibility:
+  seed: 42
+  deterministic: true
+
+output:
+  save_probabilities: true
+  save_logits: false
+  save_features: true
+
+calibration:
+  enabled: true
+  bins: 15

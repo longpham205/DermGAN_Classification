@@ -1,0 +1,35 @@
+# configs/logging.yaml
+logging:
+  root_dir: results
+  experiment_name: exp_01_baseline
+  experiment_aug: exp_02_base_aug
+  experiment_gan: exp_03_gan_aug
+  auto_versioning: true        # create run_001, run_002, ...
+
+  log_interval: 1              # log every epoch
+  save_predictions: true
+  save_confusion_matrix: true
+
+  tensorboard: false           # optional
+  csv_logger: true             # for plotting
+  txt_logger: true             # human-readable log
+
+# =========================
+# REPRODUCIBILITY
+# =========================
+reproducibility:
+  deterministic: true          # ensure exact reproducibility
+  cudnn_benchmark: false       # must be false when deterministic=true
+
+# =========================
+# CHECKPOINTING
+# =========================
+checkpoint:
+  enable: true
+  save_best_only: true
+
+  monitor: val_macro_f1        # MUST match metric key in training
+  mode: max
+
+  save_last: true
+  filename: model_best.pt

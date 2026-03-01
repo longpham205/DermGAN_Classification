@@ -1,0 +1,176 @@
+#configs/experiment.yaml
+
+# =========================================
+# PROJECT METADATA
+# =========================================
+project_name: DermGAN_Classification
+experiment_name: exp_01_baseline
+experiment_aug: exp_02_base_aug
+experiment_gan: exp_03_gan_aug
+
+description: >
+  Baseline skin lesion classification using real images only.
+  No GAN-based augmentation is applied.
+
+# =========================================
+# REPRODUCIBILITY
+# =========================================
+reproducibility:
+  seed: 42
+  deterministic: true
+  num_runs: 1        # >1 only for statistical testing (mean ± std)
+
+# =========================================
+# DATA SPLIT PROTOCOL 
+# =========================================
+split:
+  strategy: lesion_level_stratified
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+
+# =========================================
+# DATASET DEFINITION (SOURCE OF TRUTH)
+# =========================================
+dataset:
+  name: HAM10000
+  task: skin_lesion_classification
+
+  # ---------
+  # CLASS SEMANTICS (CRITICAL)
+  # ---------
+  classes:
+    - id: 0
+      name: nv
+      full_name: Melanocytic nevi
+    - id: 1
+      name: mel
+      full_name: Melanoma
+    - id: 2
+      name: bkl
+      full_name: Benign keratosis-like lesions
+    - id: 3
+      name: bcc
+      full_name: Basal cell carcinoma
+    - id: 4
+      name: akiec
+      full_name: Actinic keratoses
+    - id: 5
+      name: vasc
+      full_name: Vascular lesions
+    - id: 6
+      name: df
+      full_name: Dermatofibroma
+
+  num_classes: 7   # MUST match len(classes)
+
+  # ---------
+  # RAW DATASET (ORIGINAL)
+  # ---------
+  raw:
+    root: data/HAM10000
+    images_dir: images
+    metadata_csv: metadata.csv
+
+  # ---------
+  # PROCESSED DATASET (AFTER PREPROCESSING)
+  # ---------
+  processed:
+    root: dataset/processed
+    # Explicit paths used by training / evaluation
+    processed_images_dir: dataset/processed
+
+  splits:
+    splits_dir: dataset/splits
+    split_version: split_v1.yaml   # fixed split (no leakage)
+    train: train.csv 
+    val: val.csv 
+    test: test.csv
+
+  synthetic:
+    root: dataset/synthetic
+    metadata: synthetic_metadata.csv
+
+
+# =========================================
+# PREPROCESSING CONFIG
+# =========================================
+preprocess:
+  image_size: [224, 224]
+  normalize: true
+  augmentation: false   # baseline only (NO GAN, NO heavy aug)
+
+# =========================================
+# OUTPUT CONTROL
+# =========================================
+output:
+  save_checkpoints: true
+  save_results: true
+  save_logs: true
+
+checkpoints:
+  model: model_best.pt
+
+results:
+  metrics: metrics.json
+  log_txt: training_log.txt
+  log_csv: training_log.csv
+  classification_report: classification_report.json
+  confusion_matrix: confusion_matrix.json
+  predictions: predictions.csv
+
+
+# =========================================
+# EXPERIMENT TAGS (FOR PAPER / TRACKING)
+# =========================================
+tags:
+  - baseline
+  - no_gan
+  - real_only
+
+notes: >
+  This experiment serves as the baseline for comparison with GAN-based
+  data augmentation experiments. All results are reported on a fixed
+  train/val/test split to ensure fairness and reproducibility.
+
+
+# =========================================
+# AUGMENTATION STRATEGY (EXPERIMENT-LEVEL)
+# =========================================
+augmentation:
+  enabled: true          # exp_01_baseline = false
+  type: basic              # none | basic | gan
+
+  # -------------------------------------
+  # BASIC IMAGE AUGMENTATION (NON-GAN)
+  # -------------------------------------
+  basic:
+    strategy: class_aware     # none | uniform | class_aware
+    apply_to: train_only
+
+    # Targeted augmentation for imbalanced classes
+    # Factor = number of extra augmented samples per real sample
+    class_aug_factor:
+      nv: 1       # ~67%
+      mel: 1      # ~11%
+      bkl: 1      # ~11%
+      bcc: 2      # ~5%
+      akiec: 3    # ~3%
+      vasc: 4     # ~1.4%
+      df: 4       # ~1.1%
+
+    # Which transform strength to use per class group
+    strength_policy:
+      majority: weak
+      minority: strong
+
+  # -------------------------------------
+  # GAN-BASED AUGMENTATION
+  # -------------------------------------
+  gan:
+    enabled: false
+    source: dataset/synthetic
+    use_metadata: true
+    mix_real_and_gan: true
+    gan_ratio: 1.0        # 1.0 = match real count
